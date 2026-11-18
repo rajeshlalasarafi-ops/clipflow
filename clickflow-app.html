@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clickflow</title>
+<style>
+:root{--bg:#fff;--fg:#111;--mute:#737373;--line:#dbdbdb;--btn:#efefef;--blue:#0095f6;--tile:#e8e8ec;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--fg:#f5f5f5;--mute:#a8a8a8;--line:#262626;--btn:#262626;--tile:#1c1c1f}}
+:root[data-theme="dark"]{--bg:#000;--fg:#f5f5f5;--mute:#a8a8a8;--line:#262626;--btn:#262626;--tile:#1c1c1f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:480px;margin:0 auto;padding:12px 16px 80px}
+.top{display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:18px}
+.top .v{color:var(--blue);font-size:16px;margin-left:4px}
+.head{display:flex;align-items:center;gap:20px;margin:16px 0 10px}
+.av{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af);display:grid;place-items:center;color:#fff;font-size:32px;font-weight:700;flex:none}
+.stats{display:flex;flex:1;justify-content:space-around;text-align:center}
+.stats b{display:block;font-size:17px}.stats span{font-size:13px;color:var(--mute)}
+.name{font-weight:700}.cat{color:var(--mute)}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--btn);border-radius:16px;padding:3px 10px;font-size:12px;margin:6px 0}
+.link{color:#00376b}@media (prefers-color-scheme:dark){.link{color:#e0f1ff}}
+.btns{display:flex;gap:6px;margin:12px 0}
+.btns button{flex:1;border:0;border-radius:8px;padding:8px 4px;font-weight:600;font-size:13px;background:var(--btn);color:var(--fg);cursor:pointer}
+.btns .follow{background:var(--blue);color:#fff}.btns .follow.on{background:var(--btn);color:var(--fg)}
+.chan{display:flex;gap:10px;align-items:center;background:var(--btn);border-radius:10px;padding:10px;margin-top:8px}
+.chan small{color:var(--mute)}
+.hl{display:flex;gap:14px;overflow-x:auto;padding:12px 0}
+.hl div{text-align:center;font-size:12px;flex:none;width:64px}
+.hl i{display:block;width:60px;height:60px;border-radius:50%;border:1px solid var(--line);background:var(--tile);margin-bottom:4px;display:grid;place-items:center;font-style:normal;font-size:22px}
+.tabs{display:flex;border-top:1px solid var(--line);margin:0 -16px}
+.tabs button{flex:1;background:none;border:0;border-top:2px solid transparent;margin-top:-1px;padding:10px;color:var(--mute);font-size:18px;cursor:pointer}
+.tabs button.act{color:var(--fg);border-top-color:var(--fg)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:0 -16px}
+.grid div{aspect-ratio:3/4;background:var(--tile);display:flex;align-items:flex-end;padding:6px;font-size:12px;color:var(--mute)}
+.empty{text-align:center;color:var(--mute);padding:40px 0;grid-column:1/-1}
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;background:var(--bg);border-top:1px solid var(--line);padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));max-width:480px;margin:0 auto;z-index:5}
+.nav button{background:none;border:0;font-size:22px;color:var(--mute);cursor:pointer;padding:4px 14px}.nav button.act{color:var(--fg)}
+.logo{font-weight:800;font-size:22px;font-style:italic}
+.sto{display:flex;gap:12px;overflow-x:auto;padding:12px 0}
+.sto div{text-align:center;font-size:12px;flex:none;width:66px}
+.sto .av{width:60px;height:60px;font-size:24px;margin:0 auto 4px}
+.post{margin-bottom:20px}.ph{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:600}
+.ph .av{width:32px;height:32px;font-size:14px}
+.media{aspect-ratio:4/5;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:44px}
+.acts{display:flex;gap:16px;padding:8px 0 2px}.acts button{background:none;border:0;font-size:22px;cursor:pointer;color:var(--fg);padding:0}.acts .red{color:#ed4956}
+.auth{display:flex;flex-direction:column;gap:8px;margin-top:24px}
+.auth input{padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:15px}
+.auth button{padding:10px;border:0;border-radius:8px;font-weight:600;background:var(--blue);color:#fff;font-size:15px}
+.auth .alt{background:var(--btn);color:var(--fg)}.note{color:var(--mute);font-size:13px;text-align:center;margin-top:8px}
+.media video,.media img{width:100%;height:100%;object-fit:cover;border-radius:6px}.media{overflow:hidden}
+.grid div img{width:100%;height:100%;object-fit:cover}.ph b{cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+var SB_URL="https://iyulmwpvqcrnlwtrlljq.supabase.co",SB_KEY="sb_publishable_7bDpvjsIUn1noEy3sZnW5Q_48WhpcYy";
+var sb=supabase.createClient(SB_URL,SB_KEY);
+var S={view:"home",user:null,feed:[],mine:new Set(),prof:null,vids:[],tagged:[],tab:"grid",msg:"",busy:true};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function fmt(n){n=n||0;return n>=1e6?(n/1e6).toFixed(1)+"M":n>=1e4?(n/1e3).toFixed(1)+"K":String(n)}
+var GR=["#f58529,#dd2a7b","#8134af,#515bd4","#0095f6,#00c6ff","#11998e,#38ef7d"];
+function el(){return document.getElementById("app")}
+function nav(){return'<div class="nav"><button class="'+(S.view==="home"?'act':'')+'" onclick="go(\'home\')">\u2302</button><button onclick="alert(\'Search is coming soon\')">\uD83D\uDD0D</button><button onclick="alert(\'Upload is coming soon\')">\u2795</button><button onclick="alert(\'Reels is coming soon\')">\u25B6</button><button class="'+(S.view==="profile"||S.view==="auth"?'act':'')+'" onclick="goMe()">\uD83D\uDC64</button></div>'}
+function go(v){S.view=v;S.msg="";window.scrollTo(0,0);if(v==="home")loadFeed();else render()}
+function goMe(){if(!S.user){go("auth");return}openProfile(null)}
+
+async function ensureProfile(u){
+ var r=await sb.from("profiles").select("id").eq("id",u.id).maybeSingle();
+ if(r.data)return;
+ var name=(u.user_metadata&&u.user_metadata.username)||("user_"+u.id.slice(0,8));
+ await sb.from("profiles").insert({id:u.id,username:name});
+}
+async function loadFeed(){
+ S.busy=true;render();
+ var r=await sb.from("videos").select("id,caption,video_url,thumbnail_url,like_count,comment_count,profiles(username,is_verified)").eq("status","ready").order("created_at",{ascending:false}).limit(30);
+ S.feed=r.data||[];S.err=r.error?r.error.message:"";
+ S.mine=new Set();
+ if(S.user){var l=await sb.from("likes").select("video_id").eq("user_id",S.user.id);(l.data||[]).forEach(function(x){S.mine.add(x.video_id)})}
+ S.busy=false;render();
+}
+async function toggleLike(id){
+ if(!S.user){go("auth");return}
+ var v=S.feed.find(function(x){return x.id===id}),on=S.mine.has(id);
+ if(on){S.mine.delete(id);v.like_count--}else{S.mine.add(id);v.like_count++}
+ render();
+ var r=on?await sb.from("likes").delete().eq("user_id",S.user.id).eq("video_id",id):await sb.from("likes").insert({user_id:S.user.id,video_id:id});
+ if(r.error){loadFeed()}
+}
+async function openProfile(username){
+ S.view="profile";S.tab="grid";S.busy=true;S.prof=null;render();window.scrollTo(0,0);
+ if(!username){var me=await sb.from("profiles").select("username").eq("id",S.user.id).maybeSingle();username=me.data&&me.data.username}
+ var r=username?await sb.rpc("get_profile",{p_username:username}):{};
+ S.prof=r.data||null;
+ if(S.prof){
+  var id=S.prof.profile.id;
+  var v=await sb.from("videos").select("id,kind,like_count,thumbnail_url").eq("author_id",id).order("created_at",{ascending:false});
+  S.vids=v.data||[];
+  var t=await sb.from("video_tags").select("videos(id,kind,like_count,thumbnail_url)").eq("tagged_user_id",id);
+  S.tagged=(t.data||[]).map(function(x){return x.videos}).filter(Boolean);
+ }
+ S.busy=false;render();
+}
+async function toggleFollow(){
+ if(!S.user){go("auth");return}
+ var p=S.prof.profile,on=S.prof.is_following;
+ S.prof.is_following=!on;p.follower_count+=on?-1:1;render();
+ var r=on?await sb.from("follows").delete().eq("follower_id",S.user.id).eq("followee_id",p.id):await sb.from("follows").insert({follower_id:S.user.id,followee_id:p.id});
+ if(r.error)openProfile(p.username);
+}
+async function auth(mode){
+ var e=document.getElementById("em").value.trim(),pw=document.getElementById("pw").value,un=document.getElementById("un").value.trim().toLowerCase();
+ S.msg="";
+ if(mode==="up"){
+  if(!/^[a-z0-9_.]{3,24}$/.test(un)){S.msg="Username: 3-24 characters, a-z, 0-9, _ or .";render();return}
+  var r=await sb.auth.signUp({email:e,password:pw,options:{data:{username:un}}});
+  if(r.error)S.msg=r.error.message;else if(!r.data.session)S.msg="Check your email to confirm, then sign in.";
+ }else{
+  var r2=await sb.auth.signInWithPassword({email:e,password:pw});
+  if(r2.error)S.msg=r2.error.message;
+ }
+ if(S.msg)render();
+}
+async function signOut(){await sb.auth.signOut();S.user=null;go("home")}
+
+function renderAuth(){
+ el().innerHTML='<div class="top"><span class="logo">Clickflow</span></div><div class="auth"><input id="em" type="email" placeholder="Email" autocomplete="email"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><input id="un" placeholder="Username (sign up only)"><button onclick="auth(\'in\')">Sign in</button><button class="alt" onclick="auth(\'up\')">Sign up</button></div><div class="note">'+esc(S.msg)+'</div>'+nav();
+}
+function renderHome(){
+ var h='<div class="top"><span class="logo">Clickflow</span><span>\u2661</span></div>';
+ if(S.busy)h+='<div class="note">Loading\u2026</div>';
+ else if(S.err)h+='<div class="note">'+esc(S.err)+'</div>';
+ else if(!S.feed.length)h+='<div class="note">No videos yet.</div>';
+ else{
+  var seen={},st="";
+  S.feed.forEach(function(v){var u=v.profiles.username;if(!seen[u]){seen[u]=1;st+='<div onclick="openProfile(\''+esc(u)+'\')"><div class="av">'+esc(u[0].toUpperCase())+'</div>'+esc(u)+'</div>'}});
+  h+='<div class="sto">'+st+'</div>';
+  h+=S.feed.map(function(v,i){
+   var u=v.profiles.username,on=S.mine.has(v.id);
+   var m=v.video_url?'<video src="'+esc(v.video_url)+'" poster="'+esc(v.thumbnail_url||"")+'" controls playsinline preload="metadata"></video>':'\u25B6';
+   return'<div class="post"><div class="ph"><div class="av">'+esc(u[0].toUpperCase())+'</div><b onclick="openProfile(\''+esc(u)+'\')">'+esc(u)+'</b>'+(v.profiles.is_verified?'<span style="color:var(--blue)">\u2714</span>':'')+'</div>'
+   +'<div class="media" style="background:linear-gradient(160deg,'+GR[i%GR.length]+')" ondblclick="if(!S.mine.has(\''+v.id+'\'))toggleLike(\''+v.id+'\')">'+m+'</div>'
+   +'<div class="acts"><button class="'+(on?'red':'')+'" onclick="toggleLike(\''+v.id+'\')">'+(on?'\u2665':'\u2661')+'</button><button>\uD83D\uDCAC</button><button>\u27A4</button></div>'
+   +'<div><b>'+fmt(v.like_count)+' likes</b></div>'+(v.caption?'<div><b>'+esc(u)+'</b> '+esc(v.caption)+'</div>':'')+'</div>'}).join('');
+ }
+ el().innerHTML=h+nav();
+}
+function renderProfile(){
+ if(S.busy||!S.prof){el().innerHTML='<div class="note">'+(S.busy?'Loading\u2026':'Profile not found.')+'</div>'+nav();return}
+ var D=S.prof,p=D.profile,c=D.broadcast_channel,mine=S.user&&S.user.id===p.id;
+ var items=S.tab==="reels"?S.vids.filter(function(v){return v.kind==="reel"}):S.tab==="tagged"?S.tagged:S.vids;
+ var links=Array.isArray(p.links)?p.links:[];
+ var ln=links.length?(typeof links[0]==="string"?links[0]:(links[0].label||links[0].url)):"";
+ var h='<div class="top"><span>'+esc(p.username)+(p.is_verified?'<span class="v">\u2714</span>':'')+'</span><span>\u22EF</span></div>'
+ +'<div class="head"><div class="av">'+esc(p.username[0].toUpperCase())+'</div><div class="stats"><div><b>'+fmt(p.post_count)+'</b><span>Posts</span></div><div><b>'+fmt(p.follower_count)+'</b><span>Followers</span></div><div><b>'+fmt(p.following_count)+'</b><span>Following</span></div></div></div>'
+ +'<div class="name">'+esc(p.display_name||p.username)+'</div>'
+ +(p.threads_handle?'<div class="pill">@ '+fmt(p.threads_followers)+'</div>':'')
+ +(p.category?'<div class="cat">'+esc(p.category)+'</div>':'')+(p.bio?'<div>'+esc(p.bio)+'</div>':'')
+ +(ln?'<div class="link">\uD83D\uDD17 '+esc(ln)+(links.length>1?' and '+(links.length-1)+' others':'')+'</div>':'')
+ +(c?'<div class="chan"><span>\uD83D\uDCE2</span><div><b>'+esc(c.name)+'</b><br><small>Broadcast channel \u00B7 '+c.member_count+' members</small></div></div>':'')
+ +'<div class="btns">'+(mine?'<button onclick="signOut()">Sign out</button>':'<button class="follow'+(D.is_following?' on':'')+'" onclick="toggleFollow()">'+(D.is_following?'Following':'Follow')+'</button><button>Message</button>')
+ +(p.order_url?'<button onclick="window.open(\''+esc(p.order_url)+'\',\'_blank\',\'noopener\')">'+esc(p.order_label||"Order")+'</button>':'')+(D.can_contact?'<button>Contact</button>':'')+'</div>'
+ +(D.highlights.length?'<div class="hl">'+D.highlights.map(function(x){return'<div><i>'+(x.cover_url?'<img src="'+esc(x.cover_url)+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover">':esc(x.title[0].toUpperCase()))+'</i>'+esc(x.title)+'</div>'}).join('')+'</div>':'')
+ +'<div class="tabs">'+[["grid","\u25A6"],["reels","\u25B6"],["tagged","\uD83D\uDC64"]].map(function(t){return'<button class="'+(S.tab===t[0]?'act':'')+'" onclick="S.tab=\''+t[0]+'\';render()">'+t[1]+'</button>'}).join('')+'</div>'
+ +'<div class="grid">'+(items.length?items.map(function(v){return'<div>'+(v.thumbnail_url?'<img src="'+esc(v.thumbnail_url)+'" alt="">':'\u2665 '+v.like_count)+'</div>'}).join(''):'<div class="empty">Nothing here yet</div>')+'</div>';
+ el().innerHTML=h+nav();
+}
+function render(){S.view==="auth"?renderAuth():S.view==="profile"?renderProfile():renderHome()}
+
+sb.auth.onAuthStateChange(function(ev,session){
+ S.user=session?session.user:null;
+ setTimeout(async function(){
+  if(S.user)await ensureProfile(S.user);
+  if(ev==="SIGNED_IN"&&S.view==="auth"){S.view="home"}
+  if(ev==="INITIAL_SESSION"||ev==="SIGNED_IN"||ev==="SIGNED_OUT"){S.view==="profile"?openProfile(null):loadFeed()}
+ },0);
+});
+</script>
+</body>
+</html>
