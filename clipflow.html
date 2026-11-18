@@ -1,0 +1,170 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ClipFlow</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#0f1720;--card:#18232f;--ink:#f3f6f9;--mute:#9aa9b8;--acc:#ff3d71;--line:#2a3846}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+button,input,textarea{font:inherit;color:inherit}button{cursor:pointer;background:none;border:0}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.hide{display:none!important}
+#auth{height:100%;display:flex;flex-direction:column;justify-content:center;max-width:380px;margin:0 auto;padding:24px;gap:12px}
+h1{font:700 36px/1 Georgia,serif;margin:0}
+.sub{color:var(--mute);margin:0 0 8px}
+input,textarea{width:100%;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:10px}
+.btn{background:var(--acc);color:#fff;padding:12px 16px;border-radius:10px;font-weight:600;width:100%}
+.link{color:var(--mute);text-align:center;padding:8px}
+#app{height:100%;display:flex;flex-direction:column}
+#feed{flex:1;min-height:0;overflow-y:scroll;scroll-snap-type:y mandatory}
+.card{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000}
+.card video{width:100%;height:100%;object-fit:cover;display:block}
+.meta{position:absolute;left:14px;right:84px;bottom:18px;text-shadow:0 1px 3px #000}
+.rail{position:absolute;right:8px;bottom:24px;display:flex;flex-direction:column;gap:18px}
+.r{display:flex;flex-direction:column;align-items:center;font-size:12px;text-shadow:0 1px 3px #000;min-width:56px;min-height:48px}
+.r i{font-style:normal;font-size:28px;line-height:1.1}
+.r.on i{color:var(--acc)}
+#snd{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:12px;background:#0008;padding:6px 12px;border-radius:99px;font-size:13px;z-index:2}
+nav{display:flex;justify-content:space-around;align-items:center;background:var(--bg);border-top:1px solid var(--line);padding:6px 0 calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{padding:8px 20px;color:var(--mute);min-height:44px}
+nav .plus{background:var(--acc);color:#fff;border-radius:10px;font-weight:700;font-size:20px;padding:6px 22px}
+.empty{height:100%;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mute);padding:32px}
+#veil{position:fixed;inset:0;background:#0009;z-index:5}
+#sheet{position:fixed;left:0;right:0;bottom:0;max-height:78%;overflow:auto;background:var(--card);border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));z-index:6;max-width:560px;margin:0 auto}
+#sheet h2{margin:0 0 12px;font-size:17px}
+.cm{padding:8px 0;border-bottom:1px solid var(--line)}.cm b{color:var(--mute);font-weight:600}
+.row{display:flex;gap:8px;margin-top:12px}.row .btn{width:auto}
+#toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:#fff;color:#111;padding:8px 14px;border-radius:10px;z-index:9;max-width:90%;font-size:14px}
+</style></head><body>
+<div id="auth" class="hide">
+  <h1>ClipFlow</h1><p class="sub" id="asub">Sign in to watch and post short videos.</p>
+  <input id="un" class="hide" placeholder="Username (letters, numbers, _ .)" autocomplete="username" maxlength="24">
+  <input id="em" type="email" placeholder="Email" autocomplete="email">
+  <input id="pw" type="password" placeholder="Password (6+ characters)" autocomplete="current-password">
+  <button class="btn" id="go">Sign in</button>
+  <button class="link" id="sw">New here? Create an account</button>
+</div>
+<div id="app" class="hide">
+  <button id="snd">Sound off</button>
+  <div id="feed"></div>
+  <nav><button id="home">Home</button><button id="up" class="plus" aria-label="Post a video">+</button><button id="me">Profile</button></nav>
+</div>
+<div id="veil" class="hide"></div><div id="sheet" class="hide"></div>
+<script>
+const SB=supabase.createClient("https://iyulmwpvqcrnlwtrlljq.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5dWxtd3B2cWNybmx3dHJsbGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNjg5MDYsImV4cCI6MjEwNzc0NDkwNn0.IOTzUL3OWzwlRAQUet0B7wINypBpRkNWMsHt-O8Lo0A");
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let me=null,myName="",liked=new Set(),muted=true,signup=false,io=null,tt;
+function toast(m){let t=$("#toast");if(!t){t=document.createElement("div");t.id="toast";document.body.appendChild(t)}t.textContent=m;t.classList.remove("hide");clearTimeout(tt);tt=setTimeout(()=>t.classList.add("hide"),3500)}
+function sheet(title,html){$("#sheet").innerHTML="<h2>"+title+"</h2>"+html;$("#sheet").classList.remove("hide");$("#veil").classList.remove("hide")}
+function closeSheet(){$("#sheet").classList.add("hide");$("#veil").classList.add("hide")}
+$("#veil").onclick=closeSheet;
+
+function modeUI(){$("#un").classList.toggle("hide",!signup);$("#go").textContent=signup?"Create account":"Sign in";$("#sw").textContent=signup?"Have an account? Sign in":"New here? Create an account"}
+$("#sw").onclick=()=>{signup=!signup;modeUI()};
+$("#go").onclick=async()=>{
+  const email=$("#em").value.trim(),password=$("#pw").value,username=$("#un").value.trim().toLowerCase();
+  if(!email||password.length<6)return toast("Enter your email and a password of 6+ characters");
+  if(signup&&!/^[a-z0-9_.]{3,24}$/.test(username))return toast("Username: 3-24 letters, numbers, _ or .");
+  $("#go").disabled=true;
+  const r=signup?await SB.auth.signUp({email,password,options:{data:{username}}}):await SB.auth.signInWithPassword({email,password});
+  $("#go").disabled=false;
+  if(r.error)return toast(r.error.message);
+  if(signup&&!r.data.session){toast("Check your email to confirm, then sign in");signup=false;modeUI()}
+};
+
+SB.auth.onAuthStateChange((_e,s)=>setTimeout(()=>setUser(s&&s.user),0));
+async function setUser(u){
+  me=u||null;
+  $("#auth").classList.toggle("hide",!!me);$("#app").classList.toggle("hide",!me);
+  if(!me)return;
+  await ensureProfile();loadFeed();
+}
+async function ensureProfile(){
+  const {data}=await SB.from("profiles").select("username").eq("id",me.id).maybeSingle();
+  if(data){myName=data.username;return}
+  let base=(me.user_metadata?.username||me.email.split("@")[0]).toLowerCase().replace(/[^a-z0-9_.]/g,"").slice(0,20).padEnd(3,"0");
+  for(let i=0;i<4;i++){
+    const name=i?base+Math.floor(Math.random()*9000+1000):base;
+    const {error}=await SB.from("profiles").insert({id:me.id,username:name});
+    if(!error){myName=name;return}
+    if(error.code!=="23505")return toast(error.message);
+  }
+}
+
+async function names(ids){
+  const {data}=await SB.from("profiles").select("id,username").in("id",ids);
+  return Object.fromEntries((data||[]).map(p=>[p.id,p.username]));
+}
+async function loadFeed(){
+  const feed=$("#feed");
+  const {data:vs,error}=await SB.from("feed_trending").select("*").limit(30);
+  if(error)return toast(error.message);
+  if(!vs.length){feed.innerHTML='<div class="empty">No videos yet. Tap + to post the first one.</div>';return}
+  const nm=await names([...new Set(vs.map(v=>v.author_id))]);
+  const {data:ls}=await SB.from("likes").select("video_id").eq("user_id",me.id).in("video_id",vs.map(v=>v.id));
+  liked=new Set((ls||[]).map(l=>l.video_id));
+  feed.innerHTML=vs.map(v=>`<section class="card" data-id="${v.id}"><video src="${esc(v.video_url)}" loop playsinline muted preload="metadata"></video>
+<div class="meta"><b>@${esc(nm[v.author_id]||"user")}</b><div>${esc(v.caption)}</div></div>
+<div class="rail"><button class="r like ${liked.has(v.id)?"on":""}" data-a="like" aria-label="Like"><i>&#9829;</i><span>${v.like_count}</span></button>
+<button class="r" data-a="cmt" aria-label="Comments"><i>&#9998;</i><span>${v.comment_count}</span></button></div></section>`).join("");
+  if(io)io.disconnect();
+  io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target;v.muted=muted;if(e.isIntersecting)v.play().catch(()=>{});else v.pause()}),{root:feed,threshold:.65});
+  feed.querySelectorAll("video").forEach(v=>io.observe(v));
+  feed.scrollTop=0;
+}
+$("#feed").onclick=async e=>{
+  const card=e.target.closest(".card");if(!card)return;
+  const b=e.target.closest("button[data-a]"),id=card.dataset.id;
+  if(!b){const v=card.querySelector("video");v.paused?v.play():v.pause();return}
+  if(b.dataset.a==="like"){
+    const s=b.querySelector("span"),on=liked.has(id);
+    on?liked.delete(id):liked.add(id);b.classList.toggle("on",!on);s.textContent=Math.max(0,+s.textContent+(on?-1:1));
+    const r=on?await SB.from("likes").delete().match({user_id:me.id,video_id:id}):await SB.from("likes").insert({user_id:me.id,video_id:id});
+    if(r.error)toast(r.error.message);
+  }else comments(id,card);
+};
+$("#snd").onclick=()=>{muted=!muted;$("#snd").textContent=muted?"Sound off":"Sound on";document.querySelectorAll("#feed video").forEach(v=>v.muted=muted)};
+
+async function comments(id,card){
+  sheet("Comments",'<div id="cl">Loading...</div><form class="row" id="cf"><input id="ci" maxlength="500" placeholder="Add a comment" aria-label="Comment"><button class="btn">Post</button></form>');
+  async function list(){
+    const {data,error}=await SB.from("comments").select("body,author_id").eq("video_id",id).order("created_at").limit(100);
+    if(error)return $("#cl").textContent=error.message;
+    const nm=await names([...new Set(data.map(c=>c.author_id))]);
+    $("#cl").innerHTML=data.length?data.map(c=>`<div class="cm"><b>@${esc(nm[c.author_id]||"user")}</b> ${esc(c.body)}</div>`).join(""):'<div class="cm">No comments yet.</div>';
+    const s=card.querySelector('[data-a="cmt"] span');if(s)s.textContent=data.length;
+  }
+  list();
+  $("#cf").onsubmit=async e=>{
+    e.preventDefault();const body=$("#ci").value.trim();if(!body)return;
+    const {error}=await SB.from("comments").insert({video_id:id,author_id:me.id,body});
+    if(error)return toast(error.message);
+    $("#ci").value="";list();
+  };
+}
+
+$("#home").onclick=()=>loadFeed();
+$("#me").onclick=()=>{sheet("@"+esc(myName),'<p class="sub">'+esc(me.email)+'</p><button class="btn" id="out">Sign out</button>');$("#out").onclick=async()=>{closeSheet();await SB.auth.signOut()}};
+$("#up").onclick=()=>{
+  sheet("Post a video",'<input id="vf" type="file" accept="video/mp4,video/quicktime" aria-label="Video file"><textarea id="vc" rows="3" maxlength="300" placeholder="Write a caption" style="margin-top:10px"></textarea><div class="row"><button class="btn" id="pv">Post</button></div><p class="sub" id="ps">MP4 or MOV, up to 3 minutes and 50 MB.</p>');
+  $("#pv").onclick=async()=>{
+    const f=$("#vf").files[0],ps=$("#ps");
+    if(!f)return ps.textContent="Choose a video first.";
+    if(!/^video\/(mp4|quicktime)$/.test(f.type))return ps.textContent="Use an MP4 or MOV video.";
+    if(f.size>52428800)return ps.textContent="That file is over 50 MB.";
+    $("#pv").disabled=true;ps.textContent="Checking video...";
+    const dur=await new Promise(res=>{const v=document.createElement("video");v.preload="metadata";v.onloadedmetadata=()=>res(Math.round(v.duration));v.onerror=()=>res(0);v.src=URL.createObjectURL(f)});
+    if(!dur||dur<1||dur>180){$("#pv").disabled=false;return ps.textContent="Video must be between 1 second and 3 minutes."}
+    ps.textContent="Uploading... keep this open.";
+    const path=me.id+"/"+Date.now()+"."+(f.type==="video/quicktime"?"mov":"mp4");
+    const up=await SB.storage.from("media").upload(path,f,{contentType:f.type});
+    if(up.error){$("#pv").disabled=false;return ps.textContent=up.error.message}
+    const url=SB.storage.from("media").getPublicUrl(path).data.publicUrl;
+    const ins=await SB.from("videos").insert({author_id:me.id,caption:$("#vc").value.trim()||null,storage_path:path,video_url:url,duration_seconds:dur,status:"ready"});
+    if(ins.error){$("#pv").disabled=false;return ps.textContent=ins.error.message}
+    closeSheet();toast("Posted");loadFeed();
+  };
+};
+modeUI();
+</script></body></html>
